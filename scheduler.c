@@ -27,6 +27,7 @@
 int count_loadTime(int memory_size);
 void parsingInput(int argc, char **argv, char **filename, char **scheduling_algorithm, char **memory_allocation, int *memory_size, int *quantum);
 void readFile(char *filename, int ***input_array, int *process_count);
+void swapArray( int *a, int *b, size_t n );
 
 
 /*Main Function of the program*/
@@ -151,14 +152,32 @@ void readFile(char *filename, int ***input_array, int *process_count){
         (*input_array)[*process_count][JOB_TIME_INDEX] = val4;
         (*input_array)[*process_count][ISPROCESSED_INDEX] = 0;
 
+
+        if (*process_count > 0 &&
+            val1 == (*input_array)[*process_count-1][TIME_INDEX] &&
+            val2 < (*input_array)[*process_count-1][PID_INDEX]){
+                swapArray((*input_array)[*process_count] , (*input_array)[*process_count-1], 5);
+            }
+
         *process_count+=1;
     }   
+    
     fclose(fp);
  
 
 }
 
 
-int nextProccess(){
-    return 0;
+/**
+* This following function swapArray is taken from 
+* https://stackoverflow.com/questions/49751409/swapping-2-arrays-in-c
+*/
+void swapArray( int *a, int *b, size_t n )
+{
+    for ( size_t i = 0; i < n; i++ )
+    {
+        int tmp = a[i];
+        a[i] = b[i];
+        b[i] = tmp;
+    }
 }
