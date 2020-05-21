@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -Wall -g -I.
+CFLAGS= -Wall -g -I. -lm
 # DEPS = scheduler.h
 OBJ = scheduler.o
 
