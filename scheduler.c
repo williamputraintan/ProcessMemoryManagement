@@ -397,7 +397,6 @@ void print_statistic(int **input_array, int array_size, int currentTime){
     }
 
     for (int i = 1; i <= intervalNo; i ++){
-        printf("interval %d = %d\n", i, interval_array[i]);
         if (interval_array[i] <  min_throughput){
             min_throughput = interval_array[i];
         }
@@ -416,6 +415,6 @@ void print_statistic(int **input_array, int array_size, int currentTime){
 
     printf("Throughput %d, %d, %d\n", avg_throughput, min_throughput, max_throughput);
     printf("Turnaround time %d\n", avg_turnaround_time);
-    printf("Time overhead %.2f, %.2f\n", time_overhead[0], time_overhead[1]);
+    printf("Time overhead %.2f %.2f\n", time_overhead[0], time_overhead[1]);
     printf("Makespan %d\n", makespan);
 }
