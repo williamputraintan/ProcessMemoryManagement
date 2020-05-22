@@ -111,14 +111,14 @@ int main (int argc, char **argv)
         }
 
         if (isProcessing == true && currentTime == finishTime){
-
+// fprintf(stderr, "remainingjob = %d\n", input_array[processing_index][REMAINING_JOB_TIME_INDEX]);
             //If job have not completed
-            if (input_array[processing_index][REMAINING_JOB_TIME_INDEX] >=0){
+            if (input_array[processing_index][REMAINING_JOB_TIME_INDEX] > 0){
                 push_node(listHead, processing_index);
                 numberInQueue += 1 ;
             } else {
                 //Proccess Job completed
-                evict_pid(page_array, no_pages, input_array[processing_index][PID_INDEX], currentTime   );
+                evict_pid(page_array, no_pages, input_array[processing_index][PID_INDEX], currentTime);
 
                 finish_processing(currentTime, input_array[processing_index], numberInQueue);
                 process_completed += 1;
@@ -137,6 +137,8 @@ int main (int argc, char **argv)
                 
             numberInQueue -= 1;
             isProcessing = true;
+
+            
         }
 
 
@@ -539,7 +541,7 @@ void evict_pid(int *page_array, int array_size, int process_id, int currentTime)
             }
         }
     }
-    printf("]\n");
+    if(!firstPrint) printf("]\n");
 }
 
 int check_empty_page(int *page_array, int array_size){
