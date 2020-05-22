@@ -36,7 +36,7 @@ void swapArray( int *a, int *b, size_t n );
 node createNode(int value);
 node push_node(node head, int value);
 int pop(node * head);
-void processing_job( int *job_card, int currentTime, int* finishTime, char *scheduling_algorithm, int quantum);
+int processing_job( int *job_card, int currentTime, char *scheduling_algorithm, int quantum);
 void finish_processing(int currentTime, int *job_card, int num_in_queue);
 void print_statistic(int **input_array, int array_size, int currentTime);
 
@@ -53,7 +53,7 @@ int main (int argc, char **argv)
 
     parsingInput(argc, argv, &filename, &scheduling_algorithm, &memory_allocation, &memory_size, &quantum);
 
-    printf ("filename = %s, scheduling_algorithm = %s, memory_allocation = %s, memory_size = %d, quantum = %d\n\n", filename,scheduling_algorithm,memory_allocation,memory_size, quantum);
+    // printf ("filename = %s, scheduling_algorithm = %s, memory_allocation = %s, memory_size = %d, quantum = %d\n\n", filename,scheduling_algorithm,memory_allocation,memory_size, quantum);
 
     //Reading input file
     int **input_array = malloc(sizeof(int*));
@@ -64,6 +64,9 @@ int main (int argc, char **argv)
     // creating index list
     node listHead = NULL;
     
+    // Memory Managment 
+    int page_available = memory_size/4;
+
     //Declaring variables for the process
     int currentTime = 0;
     int process_completed = 0;
@@ -113,7 +116,7 @@ int main (int argc, char **argv)
         if(isProcessing == false && numberInQueue > 0){
             processing_index = pop(&listHead);
 
-            processing_job( input_array[processing_index], currentTime, &finishTime, scheduling_algorithm, quantum);
+            finishTime = processing_job( input_array[processing_index], currentTime, scheduling_algorithm, quantum);
             numberInQueue -= 1;
             isProcessing = true;
 
@@ -134,10 +137,10 @@ int main (int argc, char **argv)
 
 
     //print and free input array
-    printf("\n\npcount = %d\n", input_lines);
+    // printf("\n\npcount = %d\n", input_lines);
     for (int i=0; i<input_lines;i++){
         
-        printf("%d %d %d %d\n", input_array[i][TIME_INDEX], input_array[i][PID_INDEX], input_array[i][MEM_SIZE_INDEX], input_array[i][JOB_TIME_INDEX]);
+        // printf("%d %d %d %d\n", input_array[i][TIME_INDEX], input_array[i][PID_INDEX], input_array[i][MEM_SIZE_INDEX], input_array[i][JOB_TIME_INDEX]);
         free(input_array[i]);
     }
     free(input_array);
@@ -323,28 +326,30 @@ int pop(node * head) {
 }
 
 
-void processing_job( int *job_card, int currentTime, int* finishTime, char *scheduling_algorithm, int quantum){
-
+int processing_job( int *job_card, int currentTime, char *scheduling_algorithm, int quantum){
+    int finishTime = currentTime;
     int process_id = job_card[PID_INDEX];
     // int loadTime = count_loadTime(job_card[MEM_SIZE_INDEX]);
     int remainingTime = job_card[REMAINING_JOB_TIME_INDEX];
 
     if(strcmp(scheduling_algorithm, "ff") == 0){
 
-        *finishTime += remainingTime; 
+        finishTime += remainingTime; 
 
     }else if (strcmp(scheduling_algorithm, "rr") == 0){
 
         if(remainingTime > quantum){
-            *finishTime += quantum; 
+            finishTime += quantum; 
         }else{
-            *finishTime += remainingTime; 
+            finishTime += remainingTime; 
         }
     }
     
 
     printf("%d, RUNNING, id=%d, remaining-time=%d\n", currentTime, process_id, remainingTime);
+    return finishTime;
 }
+
 
 void finish_processing(int currentTime, int *job_card, int num_in_queue){
     int process_id = job_card[PID_INDEX];
@@ -354,11 +359,15 @@ void finish_processing(int currentTime, int *job_card, int num_in_queue){
 
 
 void print_statistic(int **input_array, int array_size, int currentTime){
-    
+    int intervalNo = ceil((float)currentTime/60);
+
+    int *interval_array = calloc((intervalNo+1), sizeof(int));
+    assert(interval_array);
+
     //Throughput
-    int min_finishTime = currentTime;
-    int max_finishTime = 0;
-    int total_finishTime = 0;
+    int min_throughput = intervalNo;
+    int max_throughput = 0;
+    int total_throughput = 0;
 
     //Turnaround Time
     int total_turnaround_time = 0;
@@ -373,14 +382,9 @@ void print_statistic(int **input_array, int array_size, int currentTime){
         int arrivalTime = input_array[i][TIME_INDEX];
         int jobTime = input_array[i][JOB_TIME_INDEX];
 
-        //Calculate Throughput
-        if (finishTime<  min_finishTime){
-            min_finishTime = input_array[i][FINISH_TIME_INDEX];
-        }
-        if (finishTime >  max_finishTime){
-            max_finishTime = input_array[i][FINISH_TIME_INDEX];
-        }
-        total_finishTime += finishTime;
+        //Calculate Finishing interval
+        int currentInterval = ceil((float)finishTime/60);
+        interval_array[currentInterval] += 1;
 
         //Turnaround Time
         total_turnaround_time += (finishTime - arrivalTime);
@@ -392,12 +396,25 @@ void print_statistic(int **input_array, int array_size, int currentTime){
         }
     }
 
-    int throughput[3] = {ceil((float)(total_finishTime/array_size)/60), ceil((float)min_finishTime / 60), ceil((float)max_finishTime / 60)};
+    for (int i = 1; i <= intervalNo; i ++){
+        printf("interval %d = %d\n", i, interval_array[i]);
+        if (interval_array[i] <  min_throughput){
+            min_throughput = interval_array[i];
+        }
+        if (interval_array[i] >  max_throughput){
+            max_throughput = interval_array[i];
+        }
+        total_throughput += interval_array[i];
+    }
+    free(interval_array);
+
+    int avg_throughput = ceil((float)total_throughput/intervalNo);
+
     int avg_turnaround_time = ceil((float)(total_turnaround_time) / array_size);
     float time_overhead[2] = {max_overhead, total_overhead/array_size};
     int makespan = currentTime;
 
-    printf("Throughput %d, %d, %d\n", throughput[0], throughput[1], throughput[2]);
+    printf("Throughput %d, %d, %d\n", avg_throughput, min_throughput, max_throughput);
     printf("Turnaround time %d\n", avg_turnaround_time);
     printf("Time overhead %.2f, %.2f\n", time_overhead[0], time_overhead[1]);
     printf("Makespan %d\n", makespan);
