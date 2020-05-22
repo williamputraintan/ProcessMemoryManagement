@@ -43,7 +43,7 @@ int processing_job( int *job_card, int currentTime, char *scheduling_algorithm, 
 void finish_processing(int currentTime, int *job_card, int num_in_queue);
 void print_statistic(int **input_array, int array_size, int currentTime);
 void check_and_evict(int *page_array, int page_array_size, int required_page, int page_index, int currentTime);
-void evict_pid(int *page_array, int array_size, int process_id, int currentTime);
+void evict_pid(int *page_array, int array_size, int process_id, int currentTime, int *next_page_index);
 int check_empty_page(int *page_array, int array_size);
 int check_occupied_page(int *page_array, int array_size);
 
@@ -118,7 +118,7 @@ int main (int argc, char **argv)
                 numberInQueue += 1 ;
             } else {
                 //Proccess Job completed
-                evict_pid(page_array, no_pages, input_array[processing_index][PID_INDEX], currentTime);
+                evict_pid(page_array, no_pages, input_array[processing_index][PID_INDEX], currentTime, &page_index);
 
                 finish_processing(currentTime, input_array[processing_index], numberInQueue);
                 process_completed += 1;
@@ -525,12 +525,13 @@ void check_and_evict(int *page_array, int page_array_size, int required_page, in
     // fprintf(stderr, "no empty page  =%d, page needed =%d\n", no_emptyPage, page_needed);
 }
 
-void evict_pid(int *page_array, int array_size, int process_id, int currentTime){
+void evict_pid(int *page_array, int array_size, int process_id, int currentTime, int *next_page_index ){
     
     bool firstPrint = true;
     for(int i =0; i < array_size; i++){
         if(page_array[i] == process_id){
             page_array[i] = EMPTY;
+            *next_page_index -= 1;
 
             if(firstPrint){
                 printf("%d, EVICTED, mem-addresses=[", currentTime);
@@ -539,8 +540,14 @@ void evict_pid(int *page_array, int array_size, int process_id, int currentTime)
             }else{
                 printf(",%d", i);
             }
+
+            if(*next_page_index < 0) {
+                *next_page_index = array_size;
+            }
         }
     }
+
+    //Print ending if there eviction occurs
     if(!firstPrint) printf("]\n");
 }
 
