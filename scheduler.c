@@ -108,8 +108,12 @@ int main (int argc, char **argv)
         }
 
         //Reduce remaining job time each second after loading is done
-        if(isProcessing && (currentTime > (finishTime - loadTime))){
-            input_array[processing_index][REMAINING_JOB_TIME_INDEX] -= 1;
+        if(isProcessing){
+            if(loadTime <= 0){
+                input_array[processing_index][REMAINING_JOB_TIME_INDEX] -= 1;
+            }else{
+                loadTime -= 1;
+            }
         }
 
         if (isProcessing == true && currentTime == finishTime){
@@ -135,8 +139,10 @@ int main (int argc, char **argv)
 
             finishTime = processing_job( input_array[processing_index], currentTime, scheduling_algorithm, quantum, memory_allocation, \
                 page_array, &page_index, no_pages);
-                
-            loadTime = count_loadTime(input_array[processing_index][MEM_SIZE_INDEX]);    
+            if(strcmp(memory_allocation, "u") != 0){
+                loadTime = count_loadTime(input_array[processing_index][MEM_SIZE_INDEX]);                
+            }   
+    
             numberInQueue -= 1;
             isProcessing = true;
 
