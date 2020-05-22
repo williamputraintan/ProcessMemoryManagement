@@ -31,16 +31,16 @@ typedef struct node_t {
 
 //funct prototype
 
-int count_loadTime(int memory_size);
+int count_loadTime(int *process_info, int *page_array, int page_array_size);
 void parsingInput(int argc, char **argv, char **filename, char **scheduling_algorithm, char **memory_allocation, int *memory_size, int *quantum);
 void readFile(char *filename, int ***input_array, int *input_lines);
 void swapArray( int *a, int *b, size_t n );
 node createNode(int value);
 node push_node(node head, int value);
 int pop(node * head);
-int processing_job( int *job_card, int currentTime, char *scheduling_algorithm, int quantum, char *memory_allocation, \
+int processing_job( int *process_info, int currentTime, char *scheduling_algorithm, int quantum, char *memory_allocation, \
         int* page_array, int *next_page_index, int page_array_size);
-void finish_processing(int currentTime, int *job_card, int num_in_queue);
+void finish_processing(int currentTime, int *process_info, int num_in_queue);
 void print_statistic(int **input_array, int array_size, int currentTime);
 void check_and_evict(int *page_array, int page_array_size, int required_page, int page_index, int currentTime);
 void evict_pid(int *page_array, int array_size, int process_id, int currentTime, int *next_page_index);
@@ -119,7 +119,9 @@ int main (int argc, char **argv)
         if (isProcessing == true && currentTime == finishTime){
             //If job have not completed
             if (input_array[processing_index][REMAINING_JOB_TIME_INDEX] > 0){
-                push_node(listHead, processing_index);
+
+                listHead = push_node(listHead, processing_index);
+                // fprintf(stderr, "time: %d\n", listHead->value);
                 numberInQueue += 1 ;
             } else {
                 //Proccess Job completed
@@ -135,13 +137,16 @@ int main (int argc, char **argv)
 
 
         if(isProcessing == false && numberInQueue > 0){
+            
             processing_index = pop(&listHead);
+
+            if(strcmp(memory_allocation, "u") != 0){
+                loadTime = count_loadTime(input_array[processing_index], page_array, no_pages);         
+            }
 
             finishTime = processing_job( input_array[processing_index], currentTime, scheduling_algorithm, quantum, memory_allocation, \
                 page_array, &page_index, no_pages);
-            if(strcmp(memory_allocation, "u") != 0){
-                loadTime = count_loadTime(input_array[processing_index][MEM_SIZE_INDEX]);                
-            }   
+
     
             numberInQueue -= 1;
             isProcessing = true;
@@ -171,9 +176,17 @@ int main (int argc, char **argv)
     return 0;
 }
 
-int count_loadTime(int memory_size){
+int count_loadTime(int *process_info, int *page_array, int page_array_size){
+    int process_id = process_info[PID_INDEX];
+    int memory_size = process_info[MEM_SIZE_INDEX];
+    int num_page = ceil((float)memory_size/SIZE_PER_PAGE);
 
-    int num_page = memory_size/SIZE_PER_PAGE;
+    for(int i = 0; i < page_array_size; i++){
+        if(page_array[i] == process_id){
+            num_page -= 1;
+        }
+    }
+
     int loadTime = num_page * LOAD_TIME_PER_PAGE;
 
     return loadTime;
@@ -314,9 +327,10 @@ node createNode(int data){
 node push_node(node head, int value) {
     node new_node, temp ;
     new_node = createNode(value);
-
+     
     if(head == NULL){
         head = new_node;
+        if(head == NULL) fprintf(stderr,"isNULL dalem\n");
     }
     else{
         temp = head;
@@ -349,16 +363,15 @@ int pop(node * head) {
 }
 
 
-int processing_job( int *job_card, int currentTime, char *scheduling_algorithm, int quantum, char *memory_allocation, \
+int processing_job( int *process_info, int currentTime, char *scheduling_algorithm, int quantum, char *memory_allocation, \
         int* page_array, int *next_page_index, int page_array_size){
 
     int finishTime = currentTime;
-    int process_id = job_card[PID_INDEX];
-    int remainingTime = job_card[REMAINING_JOB_TIME_INDEX];
-    int memory_size = job_card[MEM_SIZE_INDEX];
+    int process_id = process_info[PID_INDEX];
+    int remainingTime = process_info[REMAINING_JOB_TIME_INDEX];
 
-    int page_needed_remaining = ceil((float)memory_size/SIZE_PER_PAGE);
-    int loadTime = page_needed_remaining * LOAD_TIME_PER_PAGE;
+    int loadTime = count_loadTime(process_info, page_array, page_array_size);
+    int page_needed_remaining = loadTime / LOAD_TIME_PER_PAGE;
 
     if(strcmp(memory_allocation, "u") != 0){
         finishTime += loadTime;
@@ -421,9 +434,9 @@ int processing_job( int *job_card, int currentTime, char *scheduling_algorithm, 
 }
 
 
-void finish_processing(int currentTime, int *job_card, int num_in_queue){
-    int process_id = job_card[PID_INDEX];
-    job_card[FINISH_TIME_INDEX] = currentTime;
+void finish_processing(int currentTime, int *process_info, int num_in_queue){
+    int process_id = process_info[PID_INDEX];
+    process_info[FINISH_TIME_INDEX] = currentTime;
     printf("%d, FINISHED, id=%d, proc-remaining=%d\n", currentTime, process_id, num_in_queue);
 }
 
