@@ -90,6 +90,7 @@ int main (int argc, char **argv)
     bool isProcessing = false;
     int processing_index = 0;
     int finishTime = 0;
+    int loadTime = 0;
 
     //Looping every second until no more input
     while(true){
@@ -106,12 +107,12 @@ int main (int argc, char **argv)
             inputArrayIndex += 1;
         }
 
-        if(isProcessing){
+        //Reduce remaining job time each second after loading is done
+        if(isProcessing && (currentTime > (finishTime - loadTime))){
             input_array[processing_index][REMAINING_JOB_TIME_INDEX] -= 1;
         }
 
         if (isProcessing == true && currentTime == finishTime){
-// fprintf(stderr, "remainingjob = %d\n", input_array[processing_index][REMAINING_JOB_TIME_INDEX]);
             //If job have not completed
             if (input_array[processing_index][REMAINING_JOB_TIME_INDEX] > 0){
                 push_node(listHead, processing_index);
@@ -135,14 +136,12 @@ int main (int argc, char **argv)
             finishTime = processing_job( input_array[processing_index], currentTime, scheduling_algorithm, quantum, memory_allocation, \
                 page_array, &page_index, no_pages);
                 
+            loadTime = count_loadTime(input_array[processing_index][MEM_SIZE_INDEX]);    
             numberInQueue -= 1;
             isProcessing = true;
 
             
         }
-
-
-
 
         //If no more input are given to the program
         if (process_completed >= input_lines){
@@ -380,8 +379,7 @@ int processing_job( int *job_card, int currentTime, char *scheduling_algorithm, 
 
     if(strcmp(scheduling_algorithm, "ff") == 0){
 
-        finishTime += remainingTime; 
-
+        finishTime += remainingTime;
     }else if (strcmp(scheduling_algorithm, "rr") == 0){
 
         if(remainingTime > quantum){
@@ -395,13 +393,6 @@ int processing_job( int *job_card, int currentTime, char *scheduling_algorithm, 
     printf("%d, RUNNING, id=%d, remaining-time=%d", currentTime, process_id, remainingTime);
     if(strcmp(memory_allocation, "u") != 0){
         
-        // //calculate num_page_use
-        // int num_page_use = 0;
-        // for (int i=0; i < page_array_size; i++){
-        //     if (page_array[i] == 1){
-        //         num_page_use += 1;
-        //     }
-        // }
         int page_used = check_occupied_page(page_array, page_array_size);
         int mem_usage_percent = ceil((float) page_used / page_array_size*100);
 
@@ -498,26 +489,27 @@ void check_and_evict(int *page_array, int page_array_size, int required_page, in
     int page_needed = required_page;
     // fprintf(stderr, "no empty page  =%d, page needed =%d page_index = %d\n", no_emptyPage, page_needed, page_index);
     if(no_emptyPage < required_page){
+        while(page_needed > 0 ){
+            if (page_array[page_index] != EMPTY){
+                page_array[page_index] = EMPTY;
+            }
+            page_index += 1;
+            if (page_index >= page_array_size){
+                page_index = 0;
+            } 
+            page_needed -= 1;
+        }
         printf("%d, EVICTED, mem-addresses=[", currentTime);
         bool firstPrint = true;
-        while(page_needed > 0 ){
-            
-            if (page_array[page_index] > EMPTY){
+        for (int i = 0; i < page_array_size; i++){
+            if (page_array[page_index] == EMPTY){
                 if(firstPrint){
                     printf("%d", page_index);
                     firstPrint = false;
                 }else{
                     printf(",%d", page_index);
-                }
-                page_array[page_index] = 0;
-            }
-
-            if (page_index >= page_array_size){
-                page_index = 0;
-            } else {
-                page_index += 1;
-            }
-            page_needed -= 1;
+                }                
+            }   
         }
 
         printf("]\n");
@@ -533,6 +525,10 @@ void evict_pid(int *page_array, int array_size, int process_id, int currentTime,
             page_array[i] = EMPTY;
             *next_page_index -= 1;
 
+            if(*next_page_index < 0) {
+                *next_page_index = array_size;
+            }
+
             if(firstPrint){
                 printf("%d, EVICTED, mem-addresses=[", currentTime);
                 printf("%d", i);
@@ -541,9 +537,7 @@ void evict_pid(int *page_array, int array_size, int process_id, int currentTime,
                 printf(",%d", i);
             }
 
-            if(*next_page_index < 0) {
-                *next_page_index = array_size;
-            }
+
         }
     }
 
