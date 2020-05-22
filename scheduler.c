@@ -392,7 +392,7 @@ int processing_job( int *job_card, int currentTime, char *scheduling_algorithm, 
     }
     
 
-    printf("%d, RUNNING, id=%d, remaining-time=%d, ", currentTime, process_id, remainingTime);
+    printf("%d, RUNNING, id=%d, remaining-time=%d", currentTime, process_id, remainingTime);
     if(strcmp(memory_allocation, "u") != 0){
         
         // //calculate num_page_use
@@ -405,7 +405,7 @@ int processing_job( int *job_card, int currentTime, char *scheduling_algorithm, 
         int page_used = check_occupied_page(page_array, page_array_size);
         int mem_usage_percent = ceil((float) page_used / page_array_size*100);
 
-        printf("load-time=%d, mem-usage=%d%%, mem-addresses=[", loadTime, mem_usage_percent);
+        printf(", load-time=%d, mem-usage=%d%%, mem-addresses=[", loadTime, mem_usage_percent);
         bool firstPrint = true;
         for (int i=0; i < page_array_size; i++){
             if (page_array[i] == process_id){
