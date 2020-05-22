@@ -504,10 +504,10 @@ void check_and_evict(int *page_array, int page_array_size, int required_page, in
         for (int i = 0; i < page_array_size; i++){
             if (page_array[page_index] == EMPTY){
                 if(firstPrint){
-                    printf("%d", page_index);
+                    printf("%d", i);
                     firstPrint = false;
                 }else{
-                    printf(",%d", page_index);
+                    printf(",%d", i);
                 }                
             }   
         }
