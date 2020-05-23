@@ -121,7 +121,6 @@ int main (int argc, char **argv)
             if (input_array[processing_index][REMAINING_JOB_TIME_INDEX] > 0){
 
                 listHead = push_node(listHead, processing_index);
-                // fprintf(stderr, "time: %d\n", listHead->value);
                 numberInQueue += 1 ;
             } else {
                 //Proccess Job completed
@@ -392,9 +391,7 @@ int processing_job( int *process_info, int currentTime, char *scheduling_algorit
             
             page_needed_remaining -= 1;
         }
-        // fprintf(stderr, "nextPageIndex = %d\n", *next_page_index);
-        // for(int i =0; i < page_array_size; i++) fprintf(stderr, "PENGISISAN   pagearray %d = %d\n",i, page_array[i]);
-    
+
         
     }
 
@@ -508,7 +505,7 @@ void print_statistic(int **input_array, int array_size, int currentTime){
 void check_and_evict(int *page_array, int page_array_size, int required_page, int page_index, int currentTime){
     int no_emptyPage = check_empty_page(page_array, page_array_size);
     int page_needed = required_page;
-    // fprintf(stderr, "no empty page  =%d, page needed =%d page_index = %d\n", no_emptyPage, page_needed, page_index);
+
     if(no_emptyPage < required_page){
         while(page_needed > 0 ){
             if (page_array[page_index] != EMPTY){
@@ -536,33 +533,26 @@ void check_and_evict(int *page_array, int page_array_size, int required_page, in
 
         printf("]\n");
     }
-    // fprintf(stderr, "no empty page  =%d, page needed =%d\n", no_emptyPage, page_needed);
+
 }
 
 void evict_pid(int *page_array, int array_size, int process_id, int currentTime, int *next_page_index ){
-    // for(int i =0; i < array_size; i++){
-    //     fprintf(stderr, "SBLM -pagearray %d = %d\n",i, page_array[i]);
-    // }
-    // fprintf(stderr, "WHAT TO DO ? indexnya %d PID = %d\n", *next_page_index, process_id);
+
     int evicted_page[array_size];
     for(int i=0; i<array_size; i++) evicted_page[i] = 0;
     bool isEvicting = false;
-    bool firstPrint = true;
+    
     int next_index = *next_page_index;
 
     next_index -= 1;
     if(next_index < 0) {
         next_index = (array_size-1);
     }
-    // fprintf(stderr, "INITIAL STEP indexnya %d PID = %d\n", next_index, process_id);
-    // int count_evict =0;
-    // fprintf(stderr, "nextindex %d pointer %d\n", next_index, *next_page_index);
+
 
     for(int i =0; i < array_size; i++){
         if(page_array[next_index] == process_id){
 
-            // if(page_array[next_index] == process_id){
-            // fprintf(stderr, "indexnya %d PID = %d\n", next_index, process_id);
             page_array[next_index] = EMPTY;
             *next_page_index = next_index;
             evicted_page[next_index]= EMPTY;
@@ -575,12 +565,9 @@ void evict_pid(int *page_array, int array_size, int process_id, int currentTime,
         }      
     } 
 
-        for(int z =0; z < array_size; z++){
-        // fprintf(stderr, "ssdh -pagearray %d = %d\n",z, page_array[z]);
-    }
-    // fprintf(stderr, "count evict %d\n", count_evict);
-    // fprintf(stderr, "next_page_index %d\n", *next_page_index);
+
     if(isEvicting){
+        bool firstPrint = true;
         for(int i =0; i < array_size; i++){
             if(evicted_page[i] == EMPTY){
                 if(firstPrint){
