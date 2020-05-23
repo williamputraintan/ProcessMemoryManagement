@@ -5,6 +5,7 @@
 
 #define DEFAULT_QUANTUM 10      //in seconds
 #define SIZE_PER_PAGE 4         //in KB
+#define VIRTUAL_MEMORY 16       //in KB
 #define LOAD_TIME_PER_PAGE 2    //in seconds
 #define TIME_INDEX 0
 #define PID_INDEX 1
@@ -40,7 +41,7 @@ node push_node(node head, int value);
 int pop(node * head);
 int processing_job( int *process_info, int currentTime, char *scheduling_algorithm, int quantum, char *memory_allocation, \
         int* page_array, int *next_page_index, int page_array_size);
-void finish_processing(int currentTime, int *process_info, int num_in_queue);
+void finish_processing(int currentTime, int *process_info, int num_in_queue, int *page_array, int no_pages, int *page_index);
 void print_statistic(int **input_array, int array_size, int currentTime);
 void check_and_evict(int *page_array, int page_array_size, int required_page, int page_index, int currentTime);
 void evict_pid(int *page_array, int array_size, int process_id, int currentTime, int *next_page_index);
@@ -124,9 +125,7 @@ int main (int argc, char **argv)
                 numberInQueue += 1 ;
             } else {
                 //Proccess Job completed
-                evict_pid(page_array, no_pages, input_array[processing_index][PID_INDEX], currentTime, &page_index);
-
-                finish_processing(currentTime, input_array[processing_index], numberInQueue);
+                finish_processing(currentTime, input_array[processing_index], numberInQueue, page_array, no_pages, &page_index);
                 process_completed += 1;
 
             }
@@ -393,6 +392,36 @@ int processing_job( int *process_info, int currentTime, char *scheduling_algorit
         }
 
         
+    }else if( strcmp(memory_allocation, "v") == 0) {
+
+        int no_emptyPage = check_empty_page(page_array, page_array_size);
+        int noPage_virtualMemory = VIRTUAL_MEMORY/SIZE_PER_PAGE;
+        
+        int no_pageFault = 0;
+
+        //Evicting to meet the minimum requirement
+        if ( no_emptyPage < page_needed_remaining && no_emptyPage < noPage_virtualMemory){
+
+            int noPage_toEvict = page_needed_remaining - noPage_virtualMemory;
+                     
+        }
+
+
+
+        check_and_evict(page_array, page_array_size, page_needed_remaining, *next_page_index, currentTime);
+        while(page_needed_remaining > 0){
+
+            //Assign the memory size array with its PID
+            page_array[*next_page_index] = process_id;
+
+            *next_page_index += 1;
+            
+            if (*next_page_index >= page_array_size){
+                *next_page_index=0;
+            }
+            
+            page_needed_remaining -= 1;
+        }
     }
 
     if(strcmp(scheduling_algorithm, "ff") == 0){
@@ -433,8 +462,11 @@ int processing_job( int *process_info, int currentTime, char *scheduling_algorit
 }
 
 
-void finish_processing(int currentTime, int *process_info, int num_in_queue){
+void finish_processing(int currentTime, int *process_info, int num_in_queue, int* page_array, int no_pages, int *page_index){
     int process_id = process_info[PID_INDEX];
+
+    evict_pid(page_array, no_pages, process_id, currentTime, page_index);
+    
     process_info[FINISH_TIME_INDEX] = currentTime;
     printf("%d, FINISHED, id=%d, proc-remaining=%d\n", currentTime, process_id, num_in_queue);
 }
