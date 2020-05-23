@@ -330,7 +330,6 @@ node push_node(node head, int value) {
      
     if(head == NULL){
         head = new_node;
-        if(head == NULL) fprintf(stderr,"isNULL dalem\n");
     }
     else{
         temp = head;
@@ -386,13 +385,16 @@ int processing_job( int *process_info, int currentTime, char *scheduling_algorit
             page_array[*next_page_index] = process_id;
 
             *next_page_index += 1;
-
+            
             if (*next_page_index >= page_array_size){
                 *next_page_index=0;
             }
             
             page_needed_remaining -= 1;
         }
+        // fprintf(stderr, "nextPageIndex = %d\n", *next_page_index);
+        // for(int i =0; i < page_array_size; i++) fprintf(stderr, "PENGISISAN   pagearray %d = %d\n",i, page_array[i]);
+    
         
     }
 
@@ -521,7 +523,8 @@ void check_and_evict(int *page_array, int page_array_size, int required_page, in
         printf("%d, EVICTED, mem-addresses=[", currentTime);
         bool firstPrint = true;
         for (int i = 0; i < page_array_size; i++){
-            if (page_array[page_index] == EMPTY){
+            if (page_array[i] == EMPTY){
+
                 if(firstPrint){
                     printf("%d", i);
                     firstPrint = false;
@@ -537,31 +540,62 @@ void check_and_evict(int *page_array, int page_array_size, int required_page, in
 }
 
 void evict_pid(int *page_array, int array_size, int process_id, int currentTime, int *next_page_index ){
-    
+    // for(int i =0; i < array_size; i++){
+    //     fprintf(stderr, "SBLM -pagearray %d = %d\n",i, page_array[i]);
+    // }
+    // fprintf(stderr, "WHAT TO DO ? indexnya %d PID = %d\n", *next_page_index, process_id);
+    int evicted_page[array_size];
+    for(int i=0; i<array_size; i++) evicted_page[i] = 0;
+    bool isEvicting = false;
     bool firstPrint = true;
+    int next_index = *next_page_index;
+
+    next_index -= 1;
+    if(next_index < 0) {
+        next_index = (array_size-1);
+    }
+    // fprintf(stderr, "INITIAL STEP indexnya %d PID = %d\n", next_index, process_id);
+    // int count_evict =0;
+    // fprintf(stderr, "nextindex %d pointer %d\n", next_index, *next_page_index);
+
     for(int i =0; i < array_size; i++){
-        if(page_array[i] == process_id){
-            page_array[i] = EMPTY;
-            *next_page_index -= 1;
+        if(page_array[next_index] == process_id){
 
-            if(*next_page_index < 0) {
-                *next_page_index = array_size;
-            }
-
-            if(firstPrint){
-                printf("%d, EVICTED, mem-addresses=[", currentTime);
-                printf("%d", i);
-                firstPrint = false;
-            }else{
-                printf(",%d", i);
-            }
-
+            // if(page_array[next_index] == process_id){
+            // fprintf(stderr, "indexnya %d PID = %d\n", next_index, process_id);
+            page_array[next_index] = EMPTY;
+            *next_page_index = next_index;
+            evicted_page[next_index]= EMPTY;
+            isEvicting = true;
 
         }
-    }
+        next_index -= 1;
+        if(next_index < 0) {
+            next_index = (array_size-1);
+        }      
+    } 
 
-    //Print ending if there eviction occurs
-    if(!firstPrint) printf("]\n");
+        for(int z =0; z < array_size; z++){
+        // fprintf(stderr, "ssdh -pagearray %d = %d\n",z, page_array[z]);
+    }
+    // fprintf(stderr, "count evict %d\n", count_evict);
+    // fprintf(stderr, "next_page_index %d\n", *next_page_index);
+    if(isEvicting){
+        for(int i =0; i < array_size; i++){
+            if(evicted_page[i] == EMPTY){
+                if(firstPrint){
+                    printf("%d, EVICTED, mem-addresses=[", currentTime);
+                    printf("%d", i);
+                    firstPrint = false;
+                }else{
+                    printf(",%d", i);
+                }
+            }
+        }
+
+        //Print ending if there eviction occurs
+        printf("]\n");
+    }
 }
 
 int check_empty_page(int *page_array, int array_size){
@@ -580,7 +614,7 @@ int check_occupied_page(int *page_array, int array_size){
     int occupied_page = 0;
 
     for (int i=0; i < array_size; i++){
-        if (page_array[i] > EMPTY){
+        if (page_array[i] != EMPTY){
             occupied_page += 1;
         }
     }
