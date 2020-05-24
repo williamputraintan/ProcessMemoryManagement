@@ -44,12 +44,12 @@ int pop(node * head);
 int processing_job( int *process_info, int currentTime, char *memory_allocation, int **page_array, int page_array_size );
 void finish_processing(int currentTime, int *process_info, int num_in_queue, int **page_array, int no_pages);
 void print_statistic(int **input_array, int array_size, int currentTime);
-void check_and_evict(int **page_array, int page_array_size, int required_page, int currentTime, int eviction_type);
+void check_and_evict(int **page_array, int page_array_size, int required_page, int currentTime, int eviction_type, int process_id);
 void evict_pid(int **page_array, int array_size, int process_id, int currentTime);
 int count_pageValue(int **page_array, int array_size, int match_value);
 void print_running_stats(int currentTime, int *process_info, char *memory_allocation, int loadTime, int **page_array, int page_array_size);
 int process_scheduler(int currentTime, char * scheduling_algorithm, int quantum, int *process_info);
-int smallestTime_Index(int **page_array, int page_array_size);
+int smallestTime_Index(int **page_array, int page_array_size, int process_id);
 
 /*Main Function of the program*/
 int main (int argc, char **argv)
@@ -383,7 +383,7 @@ int processing_job( int *process_info, int currentTime, char *memory_allocation,
 
         if( strcmp(memory_allocation, "p") == 0) {
             
-            check_and_evict(page_array, page_array_size, page_needed_remaining, currentTime, EVICTION_TYPE_P);
+            check_and_evict(page_array, page_array_size, page_needed_remaining, currentTime, EVICTION_TYPE_P, process_id);
 
             for (int i = 0; i < page_array_size; i++){
 
@@ -401,38 +401,33 @@ int processing_job( int *process_info, int currentTime, char *memory_allocation,
             
         }else if( strcmp(memory_allocation, "v") == 0) {
 
-    //         int no_emptyPage = count_pageValue(page_array, page_array_size, EMPTY);
-    //         int noPage_virtualMemory = VIRTUAL_MEMORY/SIZE_PER_PAGE;
-            
+            int no_emptyPage = count_pageValue(page_array, page_array_size, EMPTY);
+            int noPage_virtualMemory = VIRTUAL_MEMORY/SIZE_PER_PAGE;
 
-    //         //Evicting to meet the minimum requirement
-    //         if (page_needed_remaining > noPage_virtualMemory && no_emptyPage < noPage_virtualMemory){
+            int noPage_evict = noPage_virtualMemory - no_emptyPage - count_pageValue(page_array, page_array_size, process_id);
 
-    //             int noPage_evict = noPage_virtualMemory - no_emptyPage - count_pageValue(page_array, page_array_size, process_id);
-    //             check_and_evict(page_array, page_array_size, noPage_evict, *next_page_index, currentTime, EVICTION_TYPE_V);
+            //Evicting to meet the minimum requirement
+            if (noPage_evict > 0){
+
+                
+                check_and_evict(page_array, page_array_size, noPage_evict, currentTime, EVICTION_TYPE_V, process_id);
                         
-    //         }
+            }
             
-    // for(int i=0; i<page_array_size; i++) fprintf(stderr, "konidisi index %d = %d\n",i, page_array[i]);
-    //         for(int i = 0; i < page_array_size; i++){
-    // fprintf(stderr, "index = %d", *next_page_index);
-    //             if(page_array[*next_page_index] == EMPTY) {
-                    
-    //                 //Assign the memory size array with its PID
-    //                 page_array[*next_page_index] = process_id;
-    //                 page_needed_remaining -= 1;
-    //                 *next_page_index += 1;
-    //             }
-                
-                
-    //             if (*next_page_index >= page_array_size){
-    //                 *next_page_index=0;
-    //             }
-                
-    //             // fprintf(stderr, "INDEX pointer %d\n", *next_page_index);
-    //         }
+            for(int i = 0; i < page_array_size; i++){
 
-    //         process_info[REMAINING_JOB_TIME_INDEX] += page_needed_remaining;
+                if(page_array[PID_INDEX][i] == EMPTY && page_needed_remaining > 0) {
+                    
+                    //Assign the memory size array with its PID
+                    page_array[PID_INDEX][i] = process_id;
+                    page_array[TIME_INDEX][i] = currentTime;
+                    page_needed_remaining -= 1;
+
+                }
+                
+            }
+            //Adding reading page fault
+            process_info[REMAINING_JOB_TIME_INDEX] += page_needed_remaining;
 
         }
     }
@@ -563,28 +558,26 @@ void print_statistic(int **input_array, int array_size, int currentTime){
 }
 
 
-void check_and_evict(int **page_array, int page_array_size, int required_page, int currentTime, int eviction_type){
+void check_and_evict(int **page_array, int page_array_size, int required_page, int currentTime, int eviction_type, int process_id){
     int no_emptyPage = count_pageValue(page_array, page_array_size, EMPTY);
-// fprintf(stderr, "pageindex = %d\n", page_index);
+
     int page_needed = required_page;
-
-
+// fprintf(stderr, "no_emptyPage = %d\n", no_emptyPage);
+// fprintf(stderr, "required_page = %d\n", required_page);
     if(no_emptyPage < required_page){
 // for(int i=0; i<page_array_size; i++) fprintf(stderr, "BEFOREvicting index %d = %d\n",i, page_array[PID_INDEX][i]);
 // fprintf(stderr, "PROCESS \n");
         if(eviction_type == EVICTION_TYPE_V){
             
-            // for(int i=0; i<page_array_size; i++){
-            //     if (page_array[i] == process_id){
-            //         page_array[i] = EMPTY;
-            //         evicted_page[i] = EMPTY;
-            //         page_needed -=1;
-            //         if (page_needed <= 0) break;
-            //     }
-            // }
+            while(page_needed > 0){
+                int index_to_evict = smallestTime_Index(page_array, page_array_size, process_id);
+                page_array[PID_INDEX][index_to_evict] = EMPTY;
+                page_array[TIME_INDEX][index_to_evict] = currentTime;
+                page_needed -=1;
+            }
         }else if (eviction_type == EVICTION_TYPE_P){
             while(page_needed > 0){
-                int index_to_evict = smallestTime_Index(page_array, page_array_size);
+                int index_to_evict = smallestTime_Index(page_array, page_array_size, process_id);
                 page_array[PID_INDEX][index_to_evict] = EMPTY;
                 page_array[TIME_INDEX][index_to_evict] = currentTime;
                 page_needed -=1;
@@ -659,14 +652,14 @@ int count_pageValue(int **page_array, int array_size, int match_value){
     return count;
 }
 
-int smallestTime_Index(int **page_array, int page_array_size){
+int smallestTime_Index(int **page_array, int page_array_size, int process_id){
     int smallestTime;
     int smallestTime_Index = 0;
 
     int i = 0;
     //find non empty time
     while ( i < page_array_size){
-        if(page_array[TIME_INDEX][i] != EMPTY){
+        if(page_array[TIME_INDEX][i] != EMPTY && page_array[PID_INDEX][i] != process_id){
             smallestTime = page_array[TIME_INDEX][i];
             smallestTime_Index = i;
             break;
@@ -675,7 +668,7 @@ int smallestTime_Index(int **page_array, int page_array_size){
     }
 
     while ( i < page_array_size){
-        if(page_array[TIME_INDEX][i] != EMPTY && page_array[TIME_INDEX][i] < smallestTime){
+        if(page_array[TIME_INDEX][i] != EMPTY && page_array[TIME_INDEX][i] < smallestTime && page_array[PID_INDEX][i] != process_id){
             smallestTime = page_array[TIME_INDEX][i];
             smallestTime_Index = i;
         }
