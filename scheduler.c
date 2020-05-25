@@ -50,6 +50,7 @@ int count_pageValue(int **page_array, int array_size, int match_value);
 void print_running_stats(int currentTime, int *process_info, char *memory_allocation, int loadTime, int **page_array, int page_array_size);
 int process_scheduler(int currentTime, char * scheduling_algorithm, int quantum, int *process_info);
 int smallestTime_Index(int **page_array, int page_array_size, int process_id);
+int smallestJobTime_Index(int **input_array, int array_size, int currentTime);
 
 /*Main Function of the program*/
 int main (int argc, char **argv)
@@ -67,10 +68,11 @@ int main (int argc, char **argv)
 
     //Reading input file
     int **input_array = malloc(sizeof(int*));
+    assert(input_array);
     int input_lines = 0;
 
     readFile(filename, &input_array, &input_lines);
-
+// for(int i=0; i < input_lines; i++) fprintf(stderr, "%d %d %d %d %d %d\n", input_array[i][TIME_INDEX], input_array[i][PID_INDEX], input_array[i][MEM_SIZE_INDEX], input_array[i][JOB_TIME_INDEX], input_array[i][FINISH_TIME_INDEX], input_array[i][REMAINING_JOB_TIME_INDEX]);
     // creating index list
     node listHead = NULL;
     
@@ -103,11 +105,14 @@ int main (int argc, char **argv)
         
         //accessing all input at current time
         while(inputArrayIndex < input_lines){
-
             if (input_array[inputArrayIndex][TIME_INDEX] != currentTime){
                 break;
             }
-            listHead = push_node(listHead, inputArrayIndex);
+            if(strcmp(scheduling_algorithm, "cs") != 0){
+                
+                listHead = push_node(listHead, inputArrayIndex);
+                
+            }
             numberInQueue += 1;
             
             inputArrayIndex += 1;
@@ -141,13 +146,19 @@ int main (int argc, char **argv)
 
         if(isProcessing == false && numberInQueue > 0){
             
-            processing_index = pop(&listHead);
-
+            if(strcmp(scheduling_algorithm, "cs") == 0){
+                processing_index = smallestJobTime_Index(input_array, input_lines, currentTime);
+        fprintf(stderr, "processing_index %d\n", processing_index);
+            } else {
+                processing_index = pop(&listHead);
+            }
+            numberInQueue -= 1;
             if(strcmp(memory_allocation, "u") != 0){
-
+                
                 loadTime = processing_job( input_array[processing_index], currentTime, memory_allocation, page_array, no_pages);
                 
             }
+            
 
             finishTime = process_scheduler(currentTime, scheduling_algorithm, quantum, input_array[processing_index]);
 
@@ -155,7 +166,7 @@ int main (int argc, char **argv)
 
             print_running_stats(currentTime, input_array[processing_index], memory_allocation, loadTime, page_array, no_pages);
 
-            numberInQueue -= 1;
+            
             isProcessing = true;           
         }
 
@@ -286,7 +297,7 @@ void readFile(char *filename, int ***input_array, int *input_lines){
                     break;
                 }
                 if((*input_array)[i][PID_INDEX] < (*input_array)[i-1][PID_INDEX]){
-                    swapArray((*input_array)[i] , (*input_array)[i-1], 5);
+                    swapArray((*input_array)[i] , (*input_array)[i-1], 6);
                 }
 
             }
@@ -441,8 +452,7 @@ int processing_job( int *process_info, int currentTime, char *memory_allocation,
 int process_scheduler(int currentTime, char *scheduling_algorithm, int quantum, int *process_info){
     int finishTime = currentTime;
     int remainingTime = process_info[REMAINING_JOB_TIME_INDEX];
-    if(strcmp(scheduling_algorithm, "ff") == 0){
-
+    if(strcmp(scheduling_algorithm, "ff") == 0 || strcmp(scheduling_algorithm, "cs") == 0){
         finishTime += remainingTime;
     }else if (strcmp(scheduling_algorithm, "rr") == 0){
 
@@ -562,11 +572,10 @@ void check_and_evict(int **page_array, int page_array_size, int required_page, i
     int no_emptyPage = count_pageValue(page_array, page_array_size, EMPTY);
 
     int page_needed = required_page;
-// fprintf(stderr, "no_emptyPage = %d\n", no_emptyPage);
-// fprintf(stderr, "required_page = %d\n", required_page);
+
     if(no_emptyPage < required_page){
-// for(int i=0; i<page_array_size; i++) fprintf(stderr, "BEFOREvicting index %d = %d\n",i, page_array[PID_INDEX][i]);
-// fprintf(stderr, "PROCESS \n");
+for(int i=0; i<page_array_size; i++) fprintf(stderr, "BEFOREvicting index %d = %d\n",i, page_array[PID_INDEX][i]);
+fprintf(stderr, "PROCESS \n");
         if(eviction_type == EVICTION_TYPE_V){
             
             while(page_needed > 0){
@@ -668,8 +677,9 @@ int smallestTime_Index(int **page_array, int page_array_size, int process_id){
     }
 
     while ( i < page_array_size){
-        if(page_array[TIME_INDEX][i] != EMPTY && page_array[TIME_INDEX][i] < smallestTime && page_array[PID_INDEX][i] != process_id){
-            smallestTime = page_array[TIME_INDEX][i];
+        int index_time = page_array[TIME_INDEX][i];
+        if(index_time != EMPTY && index_time < smallestTime && page_array[PID_INDEX][i] != process_id){
+            smallestTime = index_time;
             smallestTime_Index = i;
         }
         i += 1;
@@ -677,4 +687,40 @@ int smallestTime_Index(int **page_array, int page_array_size, int process_id){
 
 
     return smallestTime_Index;
+}
+
+int smallestJobTime_Index(int **input_array, int array_size, int currentTime){
+    int lowestJobTime;
+    int lowestJobTime_Index = EMPTY;
+    int i = 0;
+    //find non empty time
+    while (input_array[i][TIME_INDEX] <= currentTime){
+
+        if(input_array[i][REMAINING_JOB_TIME_INDEX] > 0){
+            lowestJobTime = input_array[i][REMAINING_JOB_TIME_INDEX];
+            lowestJobTime_Index = i;
+            break;
+        }
+        i += 1;
+                
+        if(i >= array_size) return lowestJobTime_Index;
+    }
+
+    while (input_array[i][TIME_INDEX] <= currentTime){
+
+        int index_remainingJobTime = input_array[i][REMAINING_JOB_TIME_INDEX];
+
+        if(index_remainingJobTime > 0 && index_remainingJobTime < lowestJobTime){
+              
+            lowestJobTime = index_remainingJobTime;
+            lowestJobTime_Index = i;
+
+        }
+        i += 1;
+
+        if(i >= array_size) return lowestJobTime_Index;
+    }
+
+                
+    return lowestJobTime_Index;
 }
