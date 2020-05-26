@@ -1,0 +1,9 @@
+cs
+The algorithm used is shortest remaining job first. It will execute process with the shortest remaining job at the queue. This will significantly reduce the average waiting time for each process. 
+This will work the best if process comes are in the order of ascending remaining of job time. It will have low waiting time as every completed process will then execute the next process that comes.
+This will work the worst if the process comes at descending order of remaining job time. It will execute newer process while the older processes are still in queue and leads to a higher waiting time.
+
+cm
+The algorithm used the memory from the most frequently used. It will free memory on which they are used the most. This will be useful where older data will likely to be used in the future.
+It will work the best if the process on which need to evict have as little page as possible leaving space for the next one.
+This will work the worst if the number of pages evict is the same as number of space available. It will evict all data and no old data will be stored on the memory.
