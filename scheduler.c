@@ -17,7 +17,7 @@
 #define EVICTION_TYPE_P 0
 #define EVICTION_TYPE_V 1
 #define EVICTION_TYPE_CM 2
-#define COUNTER_INDEX 1
+#define COUNTER_INDEX 2
 
 
 #include <ctype.h>
@@ -81,9 +81,10 @@ int main (int argc, char **argv)
     
     // Memory Managment 
     int no_pages = memory_size/SIZE_PER_PAGE; 
+    int page_array_row = 3;
 
-    int *page_array[2];
-    for(int i=0; i< 2; i++) {
+    int *page_array[page_array_row];
+    for(int i=0; i< page_array_row; i++) {
         page_array[i] = malloc(no_pages * sizeof(int));
         assert(page_array[i]);
         for(int j=0; j<no_pages; j++){
@@ -151,7 +152,7 @@ int main (int argc, char **argv)
             
             if(strcmp(scheduling_algorithm, "cs") == 0){
                 processing_index = smallestJobTime_Index(input_array, input_lines, currentTime);
-        fprintf(stderr, "processing_index %d\n", processing_index);
+        // fprintf(stderr, "processing_index %d\n", processing_index);
             } else {
                 processing_index = pop(&listHead);
             }
@@ -191,7 +192,7 @@ int main (int argc, char **argv)
         free(input_array[i]);
     }
 
-    for (int i=0; i<2; i++){
+    for (int i=0; i<page_array_row; i++){
         free(page_array[i]);
     }
 
@@ -439,10 +440,10 @@ int processing_job( int *process_info, int currentTime, char *memory_allocation,
             }
             
             
-        }else if( strcmp(memory_allocation, "CM") == 0) {
+        }else if( strcmp(memory_allocation, "cm") == 0) {
             //Nama algo nya Least Frerq used /  
             //sama kek virtual memory cmn jgn replace time kalo PID nya sama
-
+// fprintf(stderr, "MASUK\n");
             int no_emptyPage = count_pageValue(page_array, page_array_size, EMPTY);
             int noPage_virtualMemory = VIRTUAL_MEMORY/SIZE_PER_PAGE;
 
@@ -459,6 +460,7 @@ int processing_job( int *process_info, int currentTime, char *memory_allocation,
                     
                     //Assign the memory size array with its PID 
                     page_array[PID_INDEX][i] = process_id;
+                    page_array[TIME_INDEX][i] = currentTime;
                     page_array[COUNTER_INDEX][i] += 1;
                     page_needed_remaining -= 1;
 
@@ -607,8 +609,8 @@ void check_and_evict(int **page_array, int page_array_size, int required_page, i
     int page_needed = required_page;
 
     if(no_emptyPage < required_page){
-for(int i=0; i<page_array_size; i++) fprintf(stderr, "BEFOREvicting index %d = %d\n",i, page_array[PID_INDEX][i]);
-fprintf(stderr, "PROCESS \n");
+// for(int i=0; i<page_array_size; i++) fprintf(stderr, "BEFOREvicting index %d = %d\n",i, page_array[PID_INDEX][i]);
+// fprintf(stderr, "PROCESS \n");
 
         if(eviction_type == EVICTION_TYPE_V){
             while(page_needed > 0){
@@ -628,6 +630,7 @@ fprintf(stderr, "PROCESS \n");
             while(page_needed > 0){
                 int index_to_evict = largestSpecified_pageIndex(page_array, page_array_size, process_id, COUNTER_INDEX);
                 page_array[PID_INDEX][index_to_evict] = EMPTY;
+                page_array[TIME_INDEX][index_to_evict] = currentTime;
                 page_array[COUNTER_INDEX][index_to_evict] = EMPTY;
                 page_needed -=1;
             }
