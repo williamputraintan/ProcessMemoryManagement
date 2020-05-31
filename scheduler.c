@@ -65,21 +65,22 @@ int main (int argc, char **argv)
     int memory_size = 0;
     int quantum = DEFAULT_QUANTUM;
 
+    //Parsing STDIN values
     parsingInput(argc, argv, &filename, &scheduling_algorithm, &memory_allocation, &memory_size, &quantum);
-
-    // printf ("filename = %s, scheduling_algorithm = %s, memory_allocation = %s, memory_size = %d, quantum = %d\n\n", filename,scheduling_algorithm,memory_allocation,memory_size, quantum);
 
     //Reading input file
     int **input_array = malloc(sizeof(int*));
     assert(input_array);
     int input_lines = 0;
 
+    //Reading each line file
     readFile(filename, &input_array, &input_lines);
-// for(int i=0; i < input_lines; i++) fprintf(stderr, "%d %d %d %d %d %d\n", input_array[i][TIME_INDEX], input_array[i][PID_INDEX], input_array[i][MEM_SIZE_INDEX], input_array[i][JOB_TIME_INDEX], input_array[i][FINISH_TIME_INDEX], input_array[i][REMAINING_JOB_TIME_INDEX]);
-    // creating index list
+
+
+    // creating index queue list
     node listHead = NULL;
     
-    // Memory Managment 
+    // Memory Managment declaring an aray
     int no_pages = memory_size/SIZE_PER_PAGE; 
     int page_array_row = 3;
 
@@ -113,12 +114,13 @@ int main (int argc, char **argv)
                 break;
             }
             if(strcmp(scheduling_algorithm, "cs") != 0){
-                
+
+                //Putting process into the jobList
                 listHead = push_node(listHead, inputArrayIndex);
                 
             }
+            //Adding number of queue
             numberInQueue += 1;
-            
             inputArrayIndex += 1;
         }
 
@@ -131,6 +133,7 @@ int main (int argc, char **argv)
             }
         }
 
+        //Process finished job 
         if (isProcessing == true && currentTime == finishTime){
             //If job have not completed
             if (input_array[processing_index][REMAINING_JOB_TIME_INDEX] > 0){
@@ -143,34 +146,33 @@ int main (int argc, char **argv)
                 process_completed += 1;
 
             }
-            
             isProcessing =false;
         }
 
-
+        //Processing new job when available
         if(isProcessing == false && numberInQueue > 0){
             
+            //Assign next job depending on it algorithm
             if(strcmp(scheduling_algorithm, "cs") == 0){
                 processing_index = smallestJobTime_Index(input_array, input_lines, currentTime);
-        // fprintf(stderr, "processing_index %d\n", processing_index);
+
             } else {
                 processing_index = pop(&listHead);
             }
             numberInQueue -= 1;
+
+            //Adding loadTime if the process have limited memory
             if(strcmp(memory_allocation, "u") != 0){
-                
                 loadTime = processing_job( input_array[processing_index], currentTime, memory_allocation, page_array, no_pages);
-                
             }
             
-
+            //Calculate finished time
             finishTime = process_scheduler(currentTime, scheduling_algorithm, quantum, input_array[processing_index]);
-
             finishTime += loadTime;
 
+            //Printing statistic of processing job
             print_running_stats(currentTime, input_array[processing_index], memory_allocation, loadTime, page_array, no_pages);
 
-            
             isProcessing = true;           
         }
 
@@ -184,23 +186,22 @@ int main (int argc, char **argv)
     
     print_statistic(input_array, input_lines,  currentTime);
 
-    //print and free input array
-    // printf("\n\npcount = %d\n", input_lines);
+    //Free all allocated memory
     for (int i=0; i<input_lines;i++){
-        
-        // printf("%d %d %d %d\n", input_array[i][TIME_INDEX], input_array[i][PID_INDEX], input_array[i][MEM_SIZE_INDEX], input_array[i][JOB_TIME_INDEX]);
         free(input_array[i]);
     }
-
     for (int i=0; i<page_array_row; i++){
         free(page_array[i]);
     }
-
     free(input_array);
-    // free(page_array);
+
+
     return 0;
 }
-
+/**
+* Calculate amount of loadtime to load based on the process information input.
+* The function will ignore if page is already loaded
+*/
 int count_loadTime(int *process_info, int **page_array, int page_array_size){
     int process_id = process_info[PID_INDEX];
     int memory_size = process_info[MEM_SIZE_INDEX];
@@ -214,7 +215,9 @@ int count_loadTime(int *process_info, int **page_array, int page_array_size){
 
     return loadTime;
 }
-
+/**
+* Parsing input from STDIN to their assign variable
+*/
 void parsingInput(int argc, char **argv, char **filename, char **scheduling_algorithm, char **memory_allocation, int *memory_size, int *quantum){
     
     int index;
@@ -254,9 +257,6 @@ void parsingInput(int argc, char **argv, char **filename, char **scheduling_algo
                 abort ();
         }
     }
-
-    // printf ("filename = %s, scheduling_algorithm = %s, memory_allocation = %s, memory_size = %d, quantum = %d\n", filename,scheduling_algorithm,memory_allocation,memory_size, quantum);
-
     for (index = optind; index < argc; index++){
         printf ("Non-option argument %s\n", argv[index]);
     }
@@ -264,11 +264,13 @@ void parsingInput(int argc, char **argv, char **filename, char **scheduling_algo
 
 }
 
-
+/**
+* Reading .txt file and put it on a 2d array
+*/
 void readFile(char *filename, int ***input_array, int *input_lines){
 
     FILE *fp;
-
+    //Open the current files
     fp = fopen(filename, "r"); // read mode
     if (fp == NULL)
     {
@@ -276,6 +278,7 @@ void readFile(char *filename, int ***input_array, int *input_lines){
         exit(EXIT_FAILURE);
     }
     
+    //Assign each input line to the array
     int val1, val2, val3, val4;
     while(fscanf(fp, "%d %d %d %d\n", &val1, &val2, &val3, &val4) != EOF){
         //Allocating memory for new line
@@ -312,12 +315,11 @@ void readFile(char *filename, int ***input_array, int *input_lines){
     
     fclose(fp);
  
-
 }
 
 
 /**
-* This following function swapArray is taken from 
+* This function will swap lines in the 2d array and is taken from 
 * https://stackoverflow.com/questions/49751409/swapping-2-arrays-in-c
 */
 void swapArray( int *a, int *b, size_t n )
@@ -331,7 +333,7 @@ void swapArray( int *a, int *b, size_t n )
 }
 
 /**
-* This function is taken and modified from 
+* This function will create node and is taken and modified from 
 * https://www.hackerearth.com/practice/data-structures/linked-list/singly-linked-list/tutorial/
 */
 node createNode(int data){
@@ -344,7 +346,7 @@ node createNode(int data){
 }
 
 /**
-* This function is taken and modified from 
+* This function will add a new node in the lis and is taken and modified from 
 * https://www.hackerearth.com/practice/data-structures/linked-list/singly-linked-list/tutorial/
 */
 node push_node(node head, int value) {
@@ -365,7 +367,7 @@ node push_node(node head, int value) {
 }
 
 /**
-* This function is taken from 
+* This function will remove the next queue from the list and is taken from 
 * https://www.learn-c.org/en/Linked_lists
 */
 int pop(node * head) {
@@ -383,23 +385,26 @@ int pop(node * head) {
 
     return retval;
 }
-
-
+/**
+* The function will process the prosses given to this function.
+* It will return the LoadTime needed for the process to run.
+*/
 int processing_job( int *process_info, int currentTime, char *memory_allocation, int **page_array, int page_array_size ){
-
-
-    int loadTime = count_loadTime(process_info, page_array, page_array_size);
-    
-    int page_needed_remaining = loadTime / LOAD_TIME_PER_PAGE;
-
     int process_id = process_info[PID_INDEX];
-// for(int i=0; i<page_array_size; i++) fprintf(stderr, "konidisi index %d = %d\n",i, page_array[PID_INDEX][i]);
+
+    //Calculate initial loadTIme && page needed remaining
+    int loadTime = count_loadTime(process_info, page_array, page_array_size);
+    int page_needed_remaining = loadTime / LOAD_TIME_PER_PAGE;  
+
+    //If page eviction required && based on its algorithm chosen
     if(page_needed_remaining>0){
 
         if( strcmp(memory_allocation, "p") == 0) {
             
+            //Will check and evict page when needed
             check_and_evict(page_array, page_array_size, page_needed_remaining, currentTime, EVICTION_TYPE_P, process_id);
 
+            //Assign pageArray with the processIDs
             for (int i = 0; i < page_array_size; i++){
 
                 if(page_array[PID_INDEX][i] == EMPTY){
@@ -412,10 +417,9 @@ int processing_job( int *process_info, int currentTime, char *memory_allocation,
                 }
 
             }
-
             
         }else if( strcmp(memory_allocation, "v") == 0) {
-
+            //Calculate paged 
             int no_emptyPage = count_pageValue(page_array, page_array_size, EMPTY);
             int noPage_virtualMemory = VIRTUAL_MEMORY/SIZE_PER_PAGE;
 
@@ -441,12 +445,9 @@ int processing_job( int *process_info, int currentTime, char *memory_allocation,
             
             
         }else if( strcmp(memory_allocation, "cm") == 0) {
-            //Nama algo nya Least Frerq used /  
-            //sama kek virtual memory cmn jgn replace time kalo PID nya sama
-// fprintf(stderr, "MASUK\n");
+            //Calculate variable for pageNeeded
             int no_emptyPage = count_pageValue(page_array, page_array_size, EMPTY);
             int noPage_virtualMemory = VIRTUAL_MEMORY/SIZE_PER_PAGE;
-
             int noPage_evict = noPage_virtualMemory - no_emptyPage - count_pageValue(page_array, page_array_size, process_id);
 
             //Evicting to meet the minimum requirement
@@ -455,7 +456,6 @@ int processing_job( int *process_info, int currentTime, char *memory_allocation,
             }
             
             for(int i = 0; i < page_array_size; i++){
-
                 if(page_array[PID_INDEX][i] == EMPTY && page_needed_remaining > 0) {
                     
                     //Assign the memory size array with its PID 
@@ -471,22 +471,24 @@ int processing_job( int *process_info, int currentTime, char *memory_allocation,
 
         }
     }
-// fprintf(stderr, "FILLING\n");
-// for(int i=0; i<page_array_size; i++) fprintf(stderr, "konidisi PENGISINAN index %d = %d\n",i, page_array[PID_INDEX][i]);
-
 
     //Adding reading page fault for all unsucessfull load
     process_info[REMAINING_JOB_TIME_INDEX] += page_needed_remaining;
 
-
+    //Reducing loadTime when it is not successfully loaded
     loadTime -= (page_needed_remaining * LOAD_TIME_PER_PAGE);
     
     return loadTime;
 }
 
+/**
+* The will return finish time needed based on the algorithm chosen
+*/
 int process_scheduler(int currentTime, char *scheduling_algorithm, int quantum, int *process_info){
     int finishTime = currentTime;
     int remainingTime = process_info[REMAINING_JOB_TIME_INDEX];
+
+    //Choose wich algortuihm used
     if(strcmp(scheduling_algorithm, "ff") == 0 || strcmp(scheduling_algorithm, "cs") == 0){
         finishTime += remainingTime;
     }else if (strcmp(scheduling_algorithm, "rr") == 0){
@@ -501,6 +503,9 @@ int process_scheduler(int currentTime, char *scheduling_algorithm, int quantum, 
     return finishTime;
 }
 
+/**
+* The function will print the running process at the beginning of the processing
+*/
 void print_running_stats(int currentTime, int *process_info, char *memory_allocation, int loadTime, int **page_array, int page_array_size){
 
     int process_id = process_info[PID_INDEX];
@@ -530,7 +535,9 @@ void print_running_stats(int currentTime, int *process_info, char *memory_alloca
     }
     printf("\n");
 }
-
+/**
+* The function will print the finished process
+*/
 void finish_processing(int currentTime, int *process_info, int num_in_queue, int** page_array, int no_pages){
     int process_id = process_info[PID_INDEX];
 
@@ -540,7 +547,9 @@ void finish_processing(int currentTime, int *process_info, int num_in_queue, int
     printf("%d, FINISHED, id=%d, proc-remaining=%d\n", currentTime, process_id, num_in_queue);
 }
 
-
+/**
+* The function will print the final statistic of the project
+*/
 void print_statistic(int **input_array, int array_size, int currentTime){
     int intervalNo = ceil((float)currentTime/60);
 
@@ -579,6 +588,7 @@ void print_statistic(int **input_array, int array_size, int currentTime){
         }
     }
 
+    //Calculate the interval values
     for (int i = 1; i <= intervalNo; i ++){
         if (interval_array[i] <  min_throughput){
             min_throughput = interval_array[i];
@@ -590,27 +600,30 @@ void print_statistic(int **input_array, int array_size, int currentTime){
     }
     free(interval_array);
 
+    //Calculate avg_throughput
     int avg_throughput = ceil((float)total_throughput/intervalNo);
 
+    //Calculate turnaround time
     int avg_turnaround_time = ceil((float)(total_turnaround_time) / array_size);
     float time_overhead[2] = {max_overhead, total_overhead/array_size};
     int makespan = currentTime;
 
+    //Printng values
     printf("Throughput %d, %d, %d\n", avg_throughput, min_throughput, max_throughput);
     printf("Turnaround time %d\n", avg_turnaround_time);
     printf("Time overhead %.2f %.2f\n", time_overhead[0], time_overhead[1]);
     printf("Makespan %d\n", makespan);
 }
 
-
+/**
+* The function will check if page needed are availabe and evict if it is not enough
+*/
 void check_and_evict(int **page_array, int page_array_size, int required_page, int currentTime, int eviction_type, int process_id){
     int no_emptyPage = count_pageValue(page_array, page_array_size, EMPTY);
-
     int page_needed = required_page;
 
+    //Evict page when needed when it is required based on the algorithm
     if(no_emptyPage < required_page){
-// for(int i=0; i<page_array_size; i++) fprintf(stderr, "BEFOREvicting index %d = %d\n",i, page_array[PID_INDEX][i]);
-// fprintf(stderr, "PROCESS \n");
 
         if(eviction_type == EVICTION_TYPE_V){
             while(page_needed > 0){
@@ -636,8 +649,7 @@ void check_and_evict(int **page_array, int page_array_size, int required_page, i
             }
         }
 
-        
-// for(int i=0; i<page_array_size; i++) fprintf(stderr, "AFTERevicting index %d = %d\n",i, page_array[PID_INDEX][i]);
+        //Printing evicted page
         printf("%d, EVICTED, mem-addresses=[", currentTime);
         bool firstPrint = true;
         for (int i = 0; i < page_array_size; i++){
@@ -657,6 +669,9 @@ void check_and_evict(int **page_array, int page_array_size, int required_page, i
 
 }
 
+/**
+* The function will evict page when the process is completely finish
+*/
 void evict_pid(int **page_array, int array_size, int process_id, int currentTime ){
 
     bool isEvicting = false;
@@ -672,7 +687,7 @@ void evict_pid(int **page_array, int array_size, int process_id, int currentTime
     
     } 
 
-
+    //Printing statistic of the evicted page
     if(isEvicting){
         bool firstPrint = true;
         for(int i =0; i < array_size; i++){
@@ -686,12 +701,13 @@ void evict_pid(int **page_array, int array_size, int process_id, int currentTime
                 }
             }
         }
-
-        //Print ending if there eviction occurs
         printf("]\n");
     }
 }
 
+/**
+* THe function will count PID in the page array value based on the matched value int the array
+*/
 int count_pageValue(int **page_array, int array_size, int match_value){
     int count = 0;
 
@@ -700,10 +716,11 @@ int count_pageValue(int **page_array, int array_size, int match_value){
             count += 1;
         }
     }
-    
     return count;
 }
-
+/**
+* The function will return the index lines based on the smallest index column
+*/
 int smallestSpecified_pageIndex(int **page_array, int page_array_size, int process_id, int specifiedIndex){
     int smallestValue;
     int smallestValue_Index = 0;
@@ -718,6 +735,7 @@ int smallestSpecified_pageIndex(int **page_array, int page_array_size, int proce
         }
         i += 1;
     }
+    //Loop until the end to find the smallest value
     while ( i < page_array_size){
         int specified_val = page_array[specifiedIndex][i];
         if(specified_val != EMPTY && specified_val < smallestValue && page_array[PID_INDEX][i] != process_id){
@@ -728,7 +746,9 @@ int smallestSpecified_pageIndex(int **page_array, int page_array_size, int proce
     }
     return smallestValue_Index;
 }
-
+/**
+* The function will return the index lines based on the largest index column
+*/
 int largestSpecified_pageIndex(int **page_array, int page_array_size, int process_id, int specifiedIndex){
     int largestValue;
     int largestValue_Index = 0;
@@ -743,6 +763,7 @@ int largestSpecified_pageIndex(int **page_array, int page_array_size, int proces
         }
         i += 1;
     }
+    //Loop until the end to find the smallest value
     while ( i < page_array_size){
         int specified_val = page_array[specifiedIndex][i];
         if(specified_val != EMPTY && specified_val > largestValue && page_array[PID_INDEX][i] != process_id){
@@ -754,6 +775,9 @@ int largestSpecified_pageIndex(int **page_array, int page_array_size, int proces
     return largestValue_Index;
 }
 
+/**
+* The function will return the smallest index lines based on the smallest JobTime_Index
+*/
 int smallestJobTime_Index(int **input_array, int array_size, int currentTime){
     int lowestJobTime;
     int lowestJobTime_Index = EMPTY;
@@ -770,7 +794,7 @@ int smallestJobTime_Index(int **input_array, int array_size, int currentTime){
                 
         if(i >= array_size) return lowestJobTime_Index;
     }
-
+    //Loop to find the smallest job Time
     while (input_array[i][TIME_INDEX] <= currentTime){
 
         int index_remainingJobTime = input_array[i][REMAINING_JOB_TIME_INDEX];
@@ -785,7 +809,6 @@ int smallestJobTime_Index(int **input_array, int array_size, int currentTime){
 
         if(i >= array_size) return lowestJobTime_Index;
     }
-
-                
+       
     return lowestJobTime_Index;
 }
