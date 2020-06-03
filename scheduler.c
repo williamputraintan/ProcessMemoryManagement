@@ -76,7 +76,6 @@ int main (int argc, char **argv)
     //Reading each line file
     readFile(filename, &input_array, &input_lines);
 
-
     // creating index queue list
     node listHead = NULL;
     
@@ -92,7 +91,6 @@ int main (int argc, char **argv)
             page_array[i][j] = EMPTY;
         }
     }
-
 
     //Declaring variables for the process
     int currentTime = 0;
@@ -114,10 +112,8 @@ int main (int argc, char **argv)
                 break;
             }
             if(strcmp(scheduling_algorithm, "cs") != 0){
-
                 //Putting process into the jobList
-                listHead = push_node(listHead, inputArrayIndex);
-                
+                listHead = push_node(listHead, inputArrayIndex); 
             }
             //Adding number of queue
             numberInQueue += 1;
@@ -151,7 +147,7 @@ int main (int argc, char **argv)
 
         //Processing new job when available
         if(isProcessing == false && numberInQueue > 0){
-            
+
             //Assign next job depending on it algorithm
             if(strcmp(scheduling_algorithm, "cs") == 0){
                 processing_index = smallestJobTime_Index(input_array, input_lines, currentTime);
@@ -452,7 +448,7 @@ int processing_job( int *process_info, int currentTime, char *memory_allocation,
 
             //Evicting to meet the minimum requirement
             if (noPage_evict > 0){
-                check_and_evict(page_array, page_array_size, noPage_evict, currentTime, EVICTION_TYPE_V, process_id);   
+                check_and_evict(page_array, page_array_size, noPage_evict, currentTime, EVICTION_TYPE_CM, process_id);   
             }
             
             for(int i = 0; i < page_array_size; i++){
@@ -642,6 +638,7 @@ void check_and_evict(int **page_array, int page_array_size, int required_page, i
         }else if (eviction_type == EVICTION_TYPE_CM){
             while(page_needed > 0){
                 int index_to_evict = largestSpecified_pageIndex(page_array, page_array_size, process_id, COUNTER_INDEX);
+                
                 page_array[PID_INDEX][index_to_evict] = EMPTY;
                 page_array[TIME_INDEX][index_to_evict] = currentTime;
                 page_array[COUNTER_INDEX][index_to_evict] = EMPTY;
