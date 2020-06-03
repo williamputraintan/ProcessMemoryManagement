@@ -1,3 +1,7 @@
 tests
 scheduler
 scheduler.o
+inputFunc.o
+queue.o
+processingFunc.o
+helperProcessingFunc.o
