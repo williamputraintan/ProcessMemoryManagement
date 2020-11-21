@@ -13,7 +13,7 @@ Memory Management:
 - Unlimited Memory (u)
 - Swapping-X (p)
 - Virtual Memory (v)
-- Most Frequently Used (vm)
+- Most Frequently Used (cm)
 
 ## Program Execution
 
