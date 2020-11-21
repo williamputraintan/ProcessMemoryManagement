@@ -55,13 +55,13 @@ where:
 * ‘set_of_pages’ is a list of page addresses (given in increasing order) that are allocated to the current process, separated by commas.
   
 If the program evicted or deallocated from the memory:<br>
-current_time, EVICTED, mem-addresses=<[set_of_pages]>
+current_time, EVICTED, mem-addresses=<[set_of_pages]> <br>
 where:
 * ‘current_time’ is as above for the RUNNING event;
 * ‘set-of-pages’ refers to the list of page addresses (given in increasing order), separated by commas, that are evicted.
 
 If the program finishes a process, it will print:<br>
-current_time, FINISHED, id=<process-id>, proc-remaining=<num_proc_left>
+current_time, FINISHED, id=<process-id>, proc-remaining=<num_proc_left> <br>
 where:
 * ‘current_time’ is as above for the RUNNING event;
 * ‘process-id’ refers to the process-id of the process that has just been completed;
