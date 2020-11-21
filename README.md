@@ -12,7 +12,7 @@ Scheduling algorithm:
 Memory Management:
 - Unlimited Memory (u)
 - Swapping-X (p)
-- Virtual Memory (c)
+- Virtual Memory (v)
 - Most Frequently Used (vm)
 
 ## Program Execution
@@ -43,8 +43,9 @@ Example of the execution line
 ## Program Result
 
 Running with the *processes.txt* would give the following result<br>
+*./scheduler -f processes.txt -a ff -m u*
+<br><br>
 
-./scheduler -f processes.txt -a ff -m u<br>
 0, RUNNING, id=4, remaining-time=30<br>
 30, FINISHED, id=4, proc-remaining=3<br>
 30, RUNNING, id=2, remaining-time=40<br>
