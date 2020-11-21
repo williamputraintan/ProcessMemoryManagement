@@ -38,7 +38,7 @@ Each column represent as *time-arrived, process-id, memory-size-req, job-time* r
 20 3 4 30<br>
 
 Example of the execution line
-*Example:* ./scheduler -f processes.txt -a ff -s 200 -m p
+**Example:** *./scheduler -f processes.txt -a ff -s 200 -m p*
 
 ## Program Result
 
