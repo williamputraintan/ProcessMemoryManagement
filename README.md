@@ -38,9 +38,40 @@ Each column represent as *time-arrived, process-id, memory-size-req, job-time* r
 20 3 4 30<br>
 
 Example of the execution line
-*Example:* ./scheduler -f processes.txt -a ff -s 200 -m p.
+*Example:* ./scheduler -f processes.txt -a ff -s 200 -m p
 
 ## Program Result
+
+**The result would be describe as follows:**
+
+If program runs a new process it will print:<br>
+current_time, RUNNING, id=<process-id>, remaining-time=<T_rem>, load-time=<T_load>, mem-usage=<mem_usage>%, mem-addresses=[<set_of_pages>]<br>
+where:
+* ‘current_time’ refers to the time at which CPU is given to a process but before the process’s pages have been loaded, if loading is required;
+* ‘process-id’ refers to the process-id of the process that is about to be loaded/run;
+* ‘T_rem’ refers to the time required until the process is finished including the time taken for any potential page faults;
+* ‘T_load’ refers to the time it takes to load process’s pages in memory, if loading is required;
+* ‘mem_usage’ is a (rounded up) integer referring to the percentage of memory currently occupied by processes, after process-id has been loaded;
+* ‘set_of_pages’ is a list of page addresses (given in increasing order) that are allocated to the current process, separated by commas.
+  
+If the program evicted or deallocated from the memory:<br>
+current_time, EVICTED, mem-addresses=<[set_of_pages]>
+where:
+* ‘current_time’ is as above for the RUNNING event;
+* ‘set-of-pages’ refers to the list of page addresses (given in increasing order), separated by commas, that are evicted.
+
+If the program finishes a process, it will print:<br>
+current_time, FINISHED, id=<process-id>, proc-remaining=<num_proc_left>
+where:
+* ‘current_time’ is as above for the RUNNING event;
+* ‘process-id’ refers to the process-id of the process that has just been completed;
+* ‘num_proc_left’ refers to the number of processes that are waiting to be executed (i.e., those that have arrived but not yet completed).
+
+At the end of the program it will print statistic as follows:<br>
+* Throughput: average (rounded up to an integer), minimum and maximum number of processes completed in sequential non-overlapping 60 second intervals.
+* Turnaround time: average time (in seconds, rounded up to an integer) between the time when the process completed and when it arrived.
+* Time overhead: maximum and average time overhead when running a process, where overhead is defined as the turnaround time of the process divided by its job-time.
+* Makespan: the time in seconds when your simulation ended.
 
 Running with the *processes.txt* would give the following result<br>
 *./scheduler -f processes.txt -a ff -m u*
